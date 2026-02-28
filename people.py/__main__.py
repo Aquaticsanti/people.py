@@ -2,39 +2,51 @@
 from tkinter import *
 
 
-
 def NewContact():
     newContactWindow = Tk()
     newContactWindow.title("Create new Contact")
     # Set geometry(widthxheight)
     newContactWindow.geometry('308x144')
 
-    nameLabel = Label(newContactWindow, text = "Name")
-    nameLabel.grid()
+    items = ["Name", "Surname", "Phone", "Email"]
+    dynamic_label = []
+    dynamic_entry = []
+    i = 0
+    for item in items:
+        label = Label(newContactWindow, text = item)
+        dynamic_label.append(label  )
+        label.grid(row=i)
 
-    nameEntry = Entry(newContactWindow, width=25)
-    nameEntry.grid(column=1, row=0)
+        entry = Entry(newContactWindow, width=25)
+        dynamic_entry.append(entry)
+        entry.grid(row=i, column=1)
+        i += 1
+    #nameLabel = Label(newContactWindow, text = "Name")
+    #nameLabel.grid()
 
-    surnameLabel = Label(newContactWindow, text="Surname")
-    surnameLabel.grid(row=1)
+    #nameEntry = Entry(newContactWindow, width=25)
+    #nameEntry.grid(column=1, row=0)
 
-    surnameEntry = Entry(newContactWindow, width=25)
-    surnameEntry.grid(column=1, row=1)
+    #surnameLabel = Label(newContactWindow, text="Surname")
+    #surnameLabel.grid(row=1)
 
-    emailLabel = Label(newContactWindow, text="Email")
-    emailLabel.grid(row=2)
+    #surnameEntry = Entry(newContactWindow, width=25)
+    #surnameEntry.grid(column=1, row=1)
 
-    emailEntry = Entry(newContactWindow, width=25)
-    emailEntry.grid(column=1, row=2)
+    #emailLabel = Label(newContactWindow, text="Email")
+    #emailLabel.grid(row=2)
 
-    phoneLabel = Label(newContactWindow, text="Phone")
-    phoneLabel.grid(row=3)
+    #emailEntry = Entry(newContactWindow, width=25)
+    #emailEntry.grid(column=1, row=2)
 
-    phoneEntry = Entry(newContactWindow, width=25)
-    phoneEntry.grid(column=1, row=3)
+    #phoneLabel = Label(newContactWindow, text="Phone")
+    #phoneLabel.grid(row=3)
+
+    #phoneEntry = Entry(newContactWindow, width=25)
+    #phoneEntry.grid(column=1, row=3)
 
     btn = Button(newContactWindow, text = "Exit", command=newContactWindow.destroy)
-    btn.grid(column=2, row=0)
+    btn.grid()
     newContactWindow.mainloop()
 
 def main() -> Tk:
