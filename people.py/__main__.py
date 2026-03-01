@@ -1,8 +1,36 @@
 # This follows the GeeksForGeeks tutorial here: https://www.geeksforgeeks.org/python/create-first-gui-application-using-python-tkinter/
 from tkinter import *
+import sqlite3
 
+db = sqlite3.connect('people.db')
+cur = db.cursor()
+if cur.execute("SELECT name FROM sqlite_master").fetchone() == None:
+    empty = True
+    id = 0
+    cur.execute("""CREATE TABLE people(
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          text,
+    surname       text,
+    phone         text,
+    email         text);""")
+else:
+    empty = False
+    id = cur.execute("select id from people order by rowid desc LIMIT 1")
+    if id.fetchone() == None:
+        empty = True
+        id = 0
+    else:
+        print(id.fetchone())
+        id = id.fetchone()
 
 def NewContact():
+    def saveExit():
+        contactInfo = []
+        for entry in dynamic_entry:
+            contactInfo.append(str(entry.get()))
+        cur.execute(f"INSERT INTO people (name, surname, phone, email) VALUES (?, ?, ?, ?)", (contactInfo))
+        db.commit()
+        newContactWindow.destroy()
     newContactWindow = Tk()
     newContactWindow.title("Create new Contact")
     # Set geometry(widthxheight)
@@ -21,32 +49,9 @@ def NewContact():
         dynamic_entry.append(entry)
         entry.grid(row=i, column=1)
         i += 1
-    #nameLabel = Label(newContactWindow, text = "Name")
-    #nameLabel.grid()
 
-    #nameEntry = Entry(newContactWindow, width=25)
-    #nameEntry.grid(column=1, row=0)
-
-    #surnameLabel = Label(newContactWindow, text="Surname")
-    #surnameLabel.grid(row=1)
-
-    #surnameEntry = Entry(newContactWindow, width=25)
-    #surnameEntry.grid(column=1, row=1)
-
-    #emailLabel = Label(newContactWindow, text="Email")
-    #emailLabel.grid(row=2)
-
-    #emailEntry = Entry(newContactWindow, width=25)
-    #emailEntry.grid(column=1, row=2)
-
-    #phoneLabel = Label(newContactWindow, text="Phone")
-    #phoneLabel.grid(row=3)
-
-    #phoneEntry = Entry(newContactWindow, width=25)
-    #phoneEntry.grid(column=1, row=3)
-
-    btn = Button(newContactWindow, text = "Exit", command=newContactWindow.destroy)
-    btn.grid()
+    exitbtn = Button(newContactWindow, text = "Save and Exit", command=saveExit)
+    exitbtn.grid()
     newContactWindow.mainloop()
 
 def main() -> Tk:
@@ -63,22 +68,23 @@ def main() -> Tk:
     item.add_command(label='New Contact', command=NewContact)
     menu.add_cascade(label='New', menu=item)
     root.config(menu=menu)
-    # adding a label to the root window
-    lbl = Label(root, text = "Placeholder text broo")
-    lbl.grid()
+    if empty == True:
+        # adding a label to the root window
+        lbl = Label(root, text = "Create some contacts to get started!")
+        lbl.grid()
     # adding Entry Field
-    txt = Entry(root, width=10)
-    txt.grid(column =1, row =0)
+    #  txt = Entry(root, width=10)
+    #  txt.grid(column =1, row =0)
     # function to display user text when
     # button is clicked
-    def clicked():
-        res = "You wrote" + txt.get()
-        lbl.configure(text = res)
+    #  def clicked():
+    #      res = "You wrote" + txt.get()
+    #      lbl.configure(text = res)
     # button widget with red color text inside
-    btn = Button(root, text = "Click me" ,
-                fg = "red", command=clicked)
+    #  btn = Button(root, text = "Click me" ,
+    #              fg = "red", command=clicked)
     # Set Button Grid
-    btn.grid(column=2, row=0)
+    #  btn.grid(column=2, row=0)
     btn2 = Button(root, text="Exit", command=root.destroy)
     btn2.grid(column=3, row=0)
     return root
