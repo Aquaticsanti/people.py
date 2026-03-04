@@ -62,7 +62,6 @@ def main() -> Tk:
             columns = ["id", "name", "surname", "phone", "email"]
         else:
             data=cur.execute('''SELECT * FROM people''')
-            print(data.description)
             columns = []
             for i in list(data.description):
                 columns += i
@@ -89,7 +88,6 @@ def main() -> Tk:
     menu.add_cascade(label='File', menu=item)
     root.config(menu=menu)
     def deleteContact(contactIndex: int):
-        print(contactIndex)
         cur.execute("DELETE FROM people WHERE id=?", (contactIndex,))
         db.commit()
         root2 = main()
