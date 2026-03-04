@@ -3,6 +3,8 @@ from tkinter import *
 from tkinter import ttk
 import time
 import sqlite3
+from functools import partial
+
 
 def NewContact():
     root.destroy()
@@ -51,11 +53,25 @@ def main() -> Tk:
         surname       text,
         phone         text,
         email         text);""")
+        columns = ["id", "name", "surname", "phone", "email"]
     else:
         empty = False
         id = cur.execute("select id from people order by rowid desc LIMIT 1")
         if id.fetchone() == None:
             empty = True
+            columns = ["id", "name", "surname", "phone", "email"]
+        else:
+            data=cur.execute('''SELECT * FROM people''')
+            print(data.description)
+            columns = []
+            for i in list(data.description):
+                columns += i
+            while True:
+                try:
+                    columns.remove(None)
+                except:
+                    break
+
     root = Tk()
     # root window title and dimension
     root.title("people.py")
@@ -67,8 +83,24 @@ def main() -> Tk:
     menu = Menu(root)
     item = Menu(menu, tearoff=False)
     item.add_command(label='New Contact', command=NewContact)
-    menu.add_cascade(label='New', menu=item)
+    item.add_command(label='Manage Fields')
+    item.add_separator()
+    item.add_command(label='Exit', command=root.destroy)
+    menu.add_cascade(label='File', menu=item)
     root.config(menu=menu)
+    def deleteContact(contactIndex: int):
+        print(contactIndex)
+        cur.execute("DELETE FROM people WHERE id=?", (contactIndex,))
+        db.commit()
+        root2 = main()
+        root.destroy()
+        deleteContact2(root2)
+    def deleteContact2(root2: Tk):
+        global root
+        root = root2
+        root.mainloop()
+    def editContact(contactIndex: int):
+        pass
     if empty == True:
         # adding a label to the root window
         lbl = Label(root, text = "Create some contacts to get started!")
@@ -78,12 +110,24 @@ def main() -> Tk:
         rows = rows.fetchall()
         rows.insert(0, ('ID', 'Name', 'Surname', 'Phone', 'Email'))
         i = 0
+        labels = []
         for j in rows:
-            h = 0
+            h = 2
+            if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
+                edit = Button(root, text='     ✏️', width=2, command=partial(editContact, j[0]))
+                edit.grid(row=i, column=0)
+
+                edit = Button(root, text='     🗑️', width=2, command=partial(deleteContact, j[0]))
+                edit.grid(row=i, column=1)
+            thislbl = []
             for k in j:
                 lbl = Label(root, text=k, font=("TkDefaultFont", 12), wraplength=0.25)
                 lbl.grid(column=h, row=i)
+                if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
+                    thislbl.append(lbl)
                 h += 1
+            if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
+                labels.append(thislbl)
             if i > 0:
                 ttk.Separator(root, orient="horizontal").grid(row=i-1, sticky="ew", columnspan=10, padx=0, pady=0)
                 ttk.Separator(root, orient="horizontal").grid(row=i+1, sticky="ew", columnspan=10, padx=0, pady=0)
@@ -91,14 +135,6 @@ def main() -> Tk:
                 pass
             
             i += 2
-    btn2 = Button(root, text="Exit", command=root.destroy)
-    try:
-        if i == 0:
-            pass
-    except UnboundLocalError:
-        btn2.grid(column=0, row=1)
-    else:
-        btn2.grid(column=0, row=i)
     return root
 # Execute Tkinter
 root = main()
