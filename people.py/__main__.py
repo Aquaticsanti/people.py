@@ -38,7 +38,7 @@ def NewContact(index: int = -1):
     if index == -1:
         newContactWindow.title("Create new Contact")
     else:
-        newContactWindow.title(f"Editing Contact #{indexSS}")
+        newContactWindow.title(f"Editing Contact #{index}")
     # Set geometry(widthxheight)
     newContactWindow.geometry('308x144')
 
