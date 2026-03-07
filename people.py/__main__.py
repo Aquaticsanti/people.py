@@ -7,17 +7,27 @@ from functools import partial
 import os
 
 
-def NewContact():
+def NewContact(index: int = -1):
     root.destroy()
     def saveExit():
-        contactInfo = []
-        for entry in dynamic_entry:
-            contactInfo.append(str(entry.get()))
-        cur.execute(f"INSERT INTO people (name, surname, phone, email) VALUES (?, ?, ?, ?)", (contactInfo))
-        db.commit()
         global root
-        root = main()
-        newContactWindow.destroy()
+        if index == -1:
+            contactInfo = []
+            for entry in dynamic_entry:
+                contactInfo.append(str(entry.get()))
+            cur.execute(f"INSERT INTO people (name, surname, phone, email) VALUES (?, ?, ?, ?)", (contactInfo))
+            db.commit()
+            root = main()
+            newContactWindow.destroy()
+        else:
+            contactInfo = []
+            for entry in dynamic_entry:
+                contactInfo.append(str(entry.get()))
+            print(index)
+            cur.execute(f"UPDATE people SET name=?, surname=?, phone=?, email=? WHERE id={index}", (contactInfo))
+            db.commit()
+            root = main()
+            newContactWindow.destroy()
     id = cur.execute('select * from people')
     id = id.fetchall()
     try:
@@ -25,7 +35,10 @@ def NewContact():
     except IndexError:
         id = 1
     newContactWindow = Tk()
-    newContactWindow.title("Create new Contact")
+    if index == -1:
+        newContactWindow.title("Create new Contact")
+    else:
+        newContactWindow.title(f"Editing Contact #{indexSS}")
     # Set geometry(widthxheight)
     newContactWindow.geometry('308x144')
 
@@ -33,19 +46,39 @@ def NewContact():
     dynamic_label = []
     dynamic_entry = []
     i = 1
+
     idLabel = Label(newContactWindow, text="ID")
     idLabel.grid(row=0)
-    idLabel2 = Label(newContactWindow, text=id)
-    idLabel2.grid(row=0, column=1, sticky="w")
-    for item in items:
-        label = Label(newContactWindow, text = item)
-        dynamic_label.append(label)
-        label.grid(row=i)
+    if index == -1:
+        idLabel2 = Label(newContactWindow, text=id)
+        idLabel2.grid(row=0, column=1, sticky="w")
+        for item in items:
+            label = Label(newContactWindow, text = item)
+            dynamic_label.append(label)
+            label.grid(row=i)
 
-        entry = Entry(newContactWindow, width=25)
-        dynamic_entry.append(entry)
-        entry.grid(row=i, column=1)
-        i += 1
+            entry = Entry(newContactWindow, width=25)
+            dynamic_entry.append(entry)
+            entry.grid(row=i, column=1)
+            i += 1
+    else:
+        idLabel2 = Label(newContactWindow, text=index)
+        idLabel2.grid(row=0, column=1, sticky="w")
+        contactInfo = cur.execute("SELECT * FROM people WHERE id = ?", (index,))
+        contactInfo = list(contactInfo.fetchone())
+        contactInfo.pop(0)
+        for info, item in zip(contactInfo, items):
+            if type(item) == int:
+                continue
+            label = Label(newContactWindow, text = item)
+            dynamic_label.append(label)
+            label.grid(row=i)
+
+            entry = Entry(newContactWindow, width=25)
+            entry.insert(0, info)
+            dynamic_entry.append(entry)
+            entry.grid(row=i, column=1)
+            i += 1
 
     exitbtn = Button(newContactWindow, text = "Save and Exit", command=saveExit)
     exitbtn.grid()
@@ -111,7 +144,7 @@ def main() -> Tk:
         root = root2
         root.mainloop()
     def editContact(contactIndex: int):
-        pass
+        NewContact(contactIndex)
     if empty == True:
         # adding a label to the root window
         lbl = Label(root, text = "Create some contacts to get started!", font=("TkDefaultFont", 12))
