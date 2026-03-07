@@ -4,6 +4,7 @@ from tkinter import ttk
 import time
 import sqlite3
 from functools import partial
+import os
 
 
 def NewContact():
@@ -17,6 +18,12 @@ def NewContact():
         global root
         root = main()
         newContactWindow.destroy()
+    id = cur.execute('select * from people')
+    id = id.fetchall()
+    try:
+        id = id[-1][0]+1
+    except IndexError:
+        id = 1
     newContactWindow = Tk()
     newContactWindow.title("Create new Contact")
     # Set geometry(widthxheight)
@@ -25,10 +32,14 @@ def NewContact():
     items = ["Name", "Surname", "Phone", "Email"]
     dynamic_label = []
     dynamic_entry = []
-    i = 0
+    i = 1
+    idLabel = Label(newContactWindow, text="ID")
+    idLabel.grid(row=0)
+    idLabel2 = Label(newContactWindow, text=id)
+    idLabel2.grid(row=0, column=1, sticky="w")
     for item in items:
         label = Label(newContactWindow, text = item)
-        dynamic_label.append(label  )
+        dynamic_label.append(label)
         label.grid(row=i)
 
         entry = Entry(newContactWindow, width=25)
@@ -56,8 +67,10 @@ def main() -> Tk:
         columns = ["id", "name", "surname", "phone", "email"]
     else:
         empty = False
-        id = cur.execute("select id from people order by rowid desc LIMIT 1")
-        if id.fetchone() == None:
+        id = cur.execute('select * from people')
+        try:
+            id = id.fetchall()[-1]
+        except IndexError:
             empty = True
             columns = ["id", "name", "surname", "phone", "email"]
         else:
@@ -101,7 +114,7 @@ def main() -> Tk:
         pass
     if empty == True:
         # adding a label to the root window
-        lbl = Label(root, text = "Create some contacts to get started!")
+        lbl = Label(root, text = "Create some contacts to get started!", font=("TkDefaultFont", 12))
         lbl.grid()
     else:
         rows = cur.execute("SELECT * FROM people")
