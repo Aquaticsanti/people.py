@@ -5,6 +5,7 @@ import time
 import sqlite3
 from functools import partial
 import os
+import pyperclip
 
 
 def NewContact(index: int = -1):
@@ -133,6 +134,8 @@ def main() -> Tk:
     item.add_command(label='Exit', command=root.destroy)
     menu.add_cascade(label='File', menu=item)
     root.config(menu=menu)
+    def copyText(text: str, dummy):
+        pyperclip.copy(text)
     def deleteContact(contactIndex: int):
         cur.execute("DELETE FROM people WHERE id=?", (contactIndex,))
         db.commit()
@@ -169,6 +172,7 @@ def main() -> Tk:
                 lbl.grid(column=h, row=i)
                 if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
                     thislbl.append(lbl)
+                    lbl.bind("<Button-1>", partial(copyText, k))
                 h += 1
             if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
                 labels.append(thislbl)
