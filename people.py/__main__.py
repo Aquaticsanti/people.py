@@ -154,6 +154,7 @@ def newFields() -> Tk:
             exit.configure(state="normal")
             db.commit()
             i += 1
+            
         def CancelNewField():
             edit.destroy()
             delete.destroy()
@@ -168,6 +169,8 @@ def newFields() -> Tk:
         lbl.grid(row=i+1, column=2)
         elements.append((edit, delete, lbl))
         exit.configure(state="disabled")
+        exit.grid(row=i+2)
+        new.grid(row=i+2)
     new = Button(FieldsWindow, text='+', width=4, command=CreateField, font=("TkDefaultFont", 12, "bold"))
     new.grid(column=0, row=i+2, columnspan=2, sticky="we")
     def saveExit():
