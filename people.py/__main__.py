@@ -16,7 +16,7 @@ def NewContact(index: int = -1):
             contactInfo = []
             for entry in dynamic_entry:
                 contactInfo.append(str(entry.get()))
-            cur.execute(f"INSERT INTO people (name, surname, phone, email) VALUES (?, ?, ?, ?)", (contactInfo))
+            cur.execute(f"INSERT INTO people {tuple(items)} VALUES {tuple(contactInfo)}")
             db.commit()
             root = main()
             newContactWindow.destroy()
@@ -25,7 +25,11 @@ def NewContact(index: int = -1):
             for entry in dynamic_entry:
                 contactInfo.append(str(entry.get()))
             print(index)
-            cur.execute(f"UPDATE people SET name=?, surname=?, phone=?, email=? WHERE id={index}", (contactInfo))
+            update = ""
+            for item, info in zip(items, contactInfo):
+                update += f'{item}="{info}", '
+            update = update[:-2]
+            cur.execute(f"UPDATE people SET {update} WHERE id={index}")
             db.commit()
             root = main()
             newContactWindow.destroy()
@@ -41,9 +45,9 @@ def NewContact(index: int = -1):
     else:
         newContactWindow.title(f"Editing Contact #{index}")
     # Set geometry(widthxheight)
-    newContactWindow.geometry('308x144')
+    newContactWindow.configure(padx=5, pady=5)
 
-    items = ["Name", "Surname", "Phone", "Email"]
+    items = columns[1:]
     dynamic_label = []
     dynamic_entry = []
     i = 1
@@ -85,12 +89,104 @@ def NewContact(index: int = -1):
     exitbtn.grid()
     newContactWindow.mainloop()
 
+def newFields() -> Tk:
+    root.destroy()
+    FieldsWindow = Tk()
+    FieldsWindow.configure(padx=5, pady=5)
+    FieldsWindow.title("Managing fields")
+    fields = cur.execute("PRAGMA table_info(people)")
+    fields = fields.fetchall()
+    fieldsTemp = []
+    elements = []
+    def editField(index: int, save: bool = False):
+        canChange = True
+        if save == False:
+            for trio in elements:
+                if canChange == False:
+                    break
+                if trio[0]["text"] == '     ✔️':
+                    canChange = False
+                else:
+                    canChange = True
+            if canChange == True:
+                elements[index][0].configure(text='     ✔️', command=partial(editField, index, True))
+                elements[index][2].configure(state="normal")
+                exit.configure(state="disabled")
+                global oldName
+                oldName = elements[index][2].get()
+        else:
+            elements[index][0].configure(text='     ✏️', command=partial(editField, index))
+            cur.execute(f"ALTER TABLE people RENAME COLUMN {oldName} to {elements[index][2].get()}")
+            elements[index][2].configure(state="disabled")
+            exit.configure(state="normal")
+            db.commit()
+
+    def deleteField(index: int, columnName: str):
+        for element in elements[index]:
+            element.destroy()
+        cur.execute(f"ALTER TABLE people DROP COLUMN {columnName}")
+        db.commit()
+    global i
+    for t, i in zip(fields, range(len(fields))):
+        fieldsTemp.append(t[1])
+        if t[1] != "id":
+            edit = Button(FieldsWindow, text='     ✏️', width=2, command=partial(editField, i))
+            edit.grid(row=i, column=0)
+            delete = Button(FieldsWindow, text='     🗑️', width=2, command=partial(deleteField, i, t[1]))
+            delete.grid(row=i, column=1)
+        else:
+            edit = Button(FieldsWindow, text='     ✏️', width=2, state="disabled")
+            edit.grid(row=i, column=0)
+            delete = Button(FieldsWindow, text='     🗑️', width=2, state="disabled")
+            delete.grid(row=i, column=1)
+        lbl = Entry(FieldsWindow, font=("TkDefaultFont", 12))
+        lbl.insert(0, t[1])
+        lbl.configure(state="disabled")
+        lbl.grid(row=i, column=2)
+        elements.append((edit, delete, lbl))
+    def CreateField():
+        global i
+        def SaveNewField():
+            global i
+            elements[-1][0].configure(text='     ✏️', command=partial(editField, i+1))
+            cur.execute(f"ALTER TABLE people ADD {elements[-1][2].get()} text")
+            elements[-1][2].configure(state="disabled")
+            exit.configure(state="normal")
+            db.commit()
+            i += 1
+        def CancelNewField():
+            edit.destroy()
+            delete.destroy()
+            lbl.destroy()
+            exit.configure(state="active")
+            elements.pop()
+        edit = Button(FieldsWindow, text='     ✔️', width=2, state="active", command=SaveNewField)
+        edit.grid(row=i+1, column=0)
+        delete = Button(FieldsWindow, text='     🗑️', width=2, state="active", command=CancelNewField)
+        delete.grid(row=i+1, column=1)
+        lbl = Entry(FieldsWindow, font=("TkDefaultFont", 12))
+        lbl.grid(row=i+1, column=2)
+        elements.append((edit, delete, lbl))
+        exit.configure(state="disabled")
+    new = Button(FieldsWindow, text='+', width=4, command=CreateField, font=("TkDefaultFont", 12, "bold"))
+    new.grid(column=0, row=i+2, columnspan=2, sticky="we")
+    def saveExit():
+        global root
+        root = main()
+        FieldsWindow.destroy()
+    exit = Button(FieldsWindow, text='Done', width=4, command=saveExit, font=("TkDefaultFont", 12, "bold"))
+    exit.grid(column=2, row=i+2, columnspan=2, sticky="we")
+    fieldsTemp = fields
+    del fieldsTemp
+    FieldsWindow.mainloop()
+
 def main() -> Tk:
     global db
-    db = sqlite3.connect('people.db')
     global cur
-    cur = db.cursor()
-    if cur.execute("SELECT name FROM sqlite_master").fetchone() == None:
+    global columns
+    if os.path.isfile('people.db') == False:
+        db = sqlite3.connect('people.db')
+        cur = db.cursor()
         empty = True
         cur.execute("""CREATE TABLE people(
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,36 +196,37 @@ def main() -> Tk:
         email         text);""")
         columns = ["id", "name", "surname", "phone", "email"]
     else:
-        empty = False
+        db = sqlite3.connect('people.db')
+        cur = db.cursor()
         id = cur.execute('select * from people')
         try:
             id = id.fetchall()[-1]
         except IndexError:
             empty = True
-            columns = ["id", "name", "surname", "phone", "email"]
         else:
-            data=cur.execute('''SELECT * FROM people''')
-            columns = []
-            for i in list(data.description):
-                columns += i
-            while True:
-                try:
-                    columns.remove(None)
-                except:
-                    break
+            empty = False
+        data=cur.execute('''SELECT * FROM people''')
+        columns = []
+        for i in list(data.description):
+            columns += i
+        while True:
+            try:
+                columns.remove(None)
+            except:
+                break
 
     root = Tk()
     # root window title and dimension
     root.title("people.py")
     # Set geometry(widthxheight)
-    root.geometry('375x200')
+    root.configure(padx=5, pady=5)
     # adding menu bar in root window
     # new item in menu bar labelled as 'New'
     # adding more items in the menu bar 
     menu = Menu(root)
     item = Menu(menu, tearoff=False)
     item.add_command(label='New Contact', command=NewContact)
-    item.add_command(label='Manage Fields')
+    item.add_command(label='Manage Fields', command=newFields)
     item.add_separator()
     item.add_command(label='Exit', command=root.destroy)
     menu.add_cascade(label='File', menu=item)
@@ -155,12 +252,12 @@ def main() -> Tk:
     else:
         rows = cur.execute("SELECT * FROM people")
         rows = rows.fetchall()
-        rows.insert(0, ('ID', 'Name', 'Surname', 'Phone', 'Email'))
+        rows.insert(0, columns)
         i = 0
         labels = []
         for j in rows:
             h = 2
-            if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
+            if j != columns:
                 edit = Button(root, text='     ✏️', width=2, command=partial(editContact, j[0]))
                 edit.grid(row=i, column=0)
 
@@ -170,11 +267,11 @@ def main() -> Tk:
             for k in j:
                 lbl = Label(root, text=k, font=("TkDefaultFont", 12), wraplength=0.25)
                 lbl.grid(column=h, row=i)
-                if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
+                if j != columns:
                     thislbl.append(lbl)
                     lbl.bind("<Button-1>", partial(copyText, k))
                 h += 1
-            if j != ('ID', 'Name', 'Surname', 'Phone', 'Email'):
+            if j != columns:
                 labels.append(thislbl)
             if i > 0:
                 ttk.Separator(root, orient="horizontal").grid(row=i-1, sticky="ew", columnspan=10, padx=0, pady=0)
