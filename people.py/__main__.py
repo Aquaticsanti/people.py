@@ -205,6 +205,7 @@ def main() -> Tk:
     global columns
     global dbFile
     global empty
+    global logo
     files = os.listdir()
     for i in range(3):
         for file in files:
@@ -248,6 +249,8 @@ def main() -> Tk:
         global dbFile
         if "dbFile" not in globals(): # AKA hasn't selected yet
             conflictWindow = Tk()
+            logo = PhotoImage(file="logos/people_py_square.png")
+            conflictWindow.iconphoto(True, logo)
             conflictWindow.title("Multiple databases detected")
             conflictLBL = Label(conflictWindow, text=("""Looks like multiple databases have been detected! 
 Please choose the one you'd like to open:"""))
@@ -294,6 +297,8 @@ Please choose the one you'd like to open:"""))
     root.title("people.py")
     # Set geometry(widthxheight)
     root.configure(padx=5, pady=5)
+    logo = PhotoImage(file="logos/people_py_square.png")
+    root.iconphoto(True, logo)
     # adding menu bar in root window
     # new item in menu bar labelled as 'New'
     # adding more items in the menu bar 
@@ -356,5 +361,6 @@ Please choose the one you'd like to open:"""))
             i += 2
     return root
 # Execute Tkinter
+
 root = main()
 root.mainloop()
