@@ -1,12 +1,21 @@
 # This follows the GeeksForGeeks tutorial here: https://www.geeksforgeeks.org/python/create-first-gui-application-using-python-tkinter/
 from tkinter import *
 from tkinter import ttk
-import time
 import sqlite3
 from functools import partial
 import os
 import pyperclip
 
+def GetColumns():
+    data = cur.execute('SELECT * FROM people')
+    columns = []
+    for i in list(data.description):
+        columns += i
+    while True:
+        try:
+            columns.remove(None)
+        except:
+            return columns
 
 def NewContact(index: int = -1):
     root.destroy()
@@ -21,6 +30,7 @@ def NewContact(index: int = -1):
             root = main()
             newContactWindow.destroy()
         else:
+            global rows
             contactInfo = []
             for entry in dynamic_entry:
                 contactInfo.append(str(entry.get()))
@@ -33,6 +43,9 @@ def NewContact(index: int = -1):
             db.commit()
             root = main()
             newContactWindow.destroy()
+            rows = cur.execute("SELECT * FROM people")
+            rows = rows.fetchall()
+            rows.insert(0, columns)
     id = cur.execute('select * from people')
     id = id.fetchall()
     try:
@@ -116,7 +129,7 @@ def newFields() -> Tk:
                 oldName = elements[index][2].get()
         else:
             elements[index][0].configure(text='     ✏️', command=partial(editField, index))
-            cur.execute(f"ALTER TABLE people RENAME COLUMN {oldName} to {elements[index][2].get()}")
+            cur.execute(f"ALTER TABLE people RENAME COLUMN '{oldName}' to '{elements[index][2].get()}'")
             elements[index][2].configure(state="disabled")
             exit.configure(state="normal")
             db.commit()
@@ -124,7 +137,7 @@ def newFields() -> Tk:
     def deleteField(index: int, columnName: str):
         for element in elements[index]:
             element.destroy()
-        cur.execute(f"ALTER TABLE people DROP COLUMN {columnName}")
+        cur.execute(f"ALTER TABLE people DROP COLUMN '{columnName}'")
         db.commit()
     global i
     for t, i in zip(fields, range(len(fields))):
@@ -149,7 +162,7 @@ def newFields() -> Tk:
         def SaveNewField():
             global i
             elements[-1][0].configure(text='     ✏️', command=partial(editField, i+1))
-            cur.execute(f"ALTER TABLE people ADD {elements[-1][2].get()} text")
+            cur.execute(f"ALTER TABLE people ADD '{elements[-1][2].get()}' text")
             elements[-1][2].configure(state="disabled")
             exit.configure(state="normal")
             db.commit()
@@ -174,9 +187,12 @@ def newFields() -> Tk:
     new = Button(FieldsWindow, text='+', width=4, command=CreateField, font=("TkDefaultFont", 12, "bold"))
     new.grid(column=0, row=i+2, columnspan=2, sticky="we")
     def saveExit():
+        global columns
         global root
+        columns = GetColumns()
         root = main()
         FieldsWindow.destroy()
+        root.mainloop()
     exit = Button(FieldsWindow, text='Done', width=4, command=saveExit, font=("TkDefaultFont", 12, "bold"))
     exit.grid(column=2, row=i+2, columnspan=2, sticky="we")
     fieldsTemp = fields
@@ -187,10 +203,40 @@ def main() -> Tk:
     global db
     global cur
     global columns
-    if os.path.isfile('people.db') == False:
+    global dbFile
+    global empty
+    files = os.listdir()
+    for i in range(3):
+        for file in files:
+            if ".db" not in file:
+                files.pop(files.index(file))
+    if len(files) == 1 and files[0] == 'people.db': # AKA the only DB is people.db
+        empty = False
         db = sqlite3.connect('people.db')
         cur = db.cursor()
+        try:
+            id = cur.execute('select * from people')
+        except sqlite3.OperationalError:
+            empty = True
+            cur.execute("""CREATE TABLE people(
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          text,
+            surname       text,
+            phone         text,
+            email         text);""")
+            columns = ["id", "name", "surname", "phone", "email"]
+        if empty == False:
+            try:
+                id = id.fetchall()[-1]
+            except IndexError:
+                empty = True
+            else:
+                empty = False
+            columns = GetColumns()
+    elif len(files) == 0: # AKA there is no DB
         empty = True
+        db = sqlite3.connect('people.db')
+        cur = db.cursor()
         cur.execute("""CREATE TABLE people(
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         name          text,
@@ -199,24 +245,49 @@ def main() -> Tk:
         email         text);""")
         columns = ["id", "name", "surname", "phone", "email"]
     else:
-        db = sqlite3.connect('people.db')
-        cur = db.cursor()
-        id = cur.execute('select * from people')
-        try:
-            id = id.fetchall()[-1]
-        except IndexError:
-            empty = True
-        else:
-            empty = False
-        data=cur.execute('''SELECT * FROM people''')
-        columns = []
-        for i in list(data.description):
-            columns += i
-        while True:
-            try:
-                columns.remove(None)
-            except:
-                break
+        global dbFile
+        if "dbFile" not in globals(): # AKA hasn't selected yet
+            conflictWindow = Tk()
+            conflictWindow.title("Multiple databases detected")
+            conflictLBL = Label(conflictWindow, text=("""Looks like multiple databases have been detected! 
+Please choose the one you'd like to open:"""))
+            conflictLBL.grid(row=0, column=0)
+            def SetDB(dbFileI: str):
+                global empty
+                global dbFile
+                global cur
+                global db
+                global columns
+                dbFile = dbFileI
+                empty = False
+                db = sqlite3.connect(dbFile)
+                cur = db.cursor()
+                try:
+                    id = cur.execute('select * from people')
+                except sqlite3.OperationalError:
+                    empty = True
+                    cur.execute("""CREATE TABLE people(
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name          text,
+                    surname       text,
+                    phone         text,
+                    email         text);""")
+                    columns = ["id", "name", "surname", "phone", "email"]
+                if empty == False:
+                    try:
+                        id = id.fetchall()[-1]
+                    except IndexError:
+                        empty = True
+                    else:
+                        empty = False
+                    columns = GetColumns()
+                conflictWindow.destroy()
+            for dbs, i in zip(files, range(len(files)+1)):
+                btn = Button(conflictWindow, text=dbs, command=partial(SetDB, dbs))
+                btn.grid(row=i+1, column=0)
+            conflictWindow.mainloop()
+
+
 
     root = Tk()
     # root window title and dimension
