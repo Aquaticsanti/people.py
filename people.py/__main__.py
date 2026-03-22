@@ -5,6 +5,7 @@ import sqlite3
 from functools import partial
 import os
 import pyperclip
+import sys
 
 def GetColumns():
     data = cur.execute('SELECT * FROM people')
@@ -18,7 +19,6 @@ def GetColumns():
             return columns
 
 def NewContact(index: int = -1):
-    root.destroy()
     def saveExit():
         global root
         if index == -1:
@@ -27,8 +27,9 @@ def NewContact(index: int = -1):
                 contactInfo.append(str(entry.get()))
             cur.execute(f"INSERT INTO people {tuple(items)} VALUES {tuple(contactInfo)}")
             db.commit()
-            root = main()
             newContactWindow.destroy()
+            root.destroy()
+            root = main()
         else:
             global rows
             contactInfo = []
@@ -41,8 +42,9 @@ def NewContact(index: int = -1):
             update = update[:-2]
             cur.execute(f"UPDATE people SET {update} WHERE id={index}")
             db.commit()
-            root = main()
             newContactWindow.destroy()
+            root.destroy()
+            root = main()
             rows = cur.execute("SELECT * FROM people")
             rows = rows.fetchall()
             rows.insert(0, columns)
@@ -52,7 +54,7 @@ def NewContact(index: int = -1):
         id = id[-1][0]+1
     except IndexError:
         id = 1
-    newContactWindow = Tk()
+    newContactWindow = Toplevel(root)
     if index == -1:
         newContactWindow.title("Create new Contact")
     else:
@@ -103,8 +105,7 @@ def NewContact(index: int = -1):
     newContactWindow.mainloop()
 
 def newFields() -> Tk:
-    root.destroy()
-    FieldsWindow = Tk()
+    FieldsWindow = Toplevel(root)
     FieldsWindow.configure(padx=5, pady=5)
     FieldsWindow.title("Managing fields")
     fields = cur.execute("PRAGMA table_info(people)")
@@ -190,8 +191,9 @@ def newFields() -> Tk:
         global columns
         global root
         columns = GetColumns()
-        root = main()
         FieldsWindow.destroy()
+        root.destroy()
+        root = main()
         root.mainloop()
     exit = Button(FieldsWindow, text='Done', width=4, command=saveExit, font=("TkDefaultFont", 12, "bold"))
     exit.grid(column=2, row=i+2, columnspan=2, sticky="we")
@@ -249,8 +251,11 @@ def main() -> Tk:
         global dbFile
         if "dbFile" not in globals(): # AKA hasn't selected yet
             conflictWindow = Tk()
-            logo = PhotoImage(file="logos/people_py_square.png")
-            conflictWindow.iconphoto(True, logo)
+#            if getattr(sys, 'frozen', False):
+#                logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
+#            else:
+#                logo = PhotoImage(file="logo.png")
+#            conflictWindow.iconphoto(True, logo)
             conflictWindow.title("Multiple databases detected")
             conflictLBL = Label(conflictWindow, text=("""Looks like multiple databases have been detected! 
 Please choose the one you'd like to open:"""))
@@ -297,8 +302,12 @@ Please choose the one you'd like to open:"""))
     root.title("people.py")
     # Set geometry(widthxheight)
     root.configure(padx=5, pady=5)
-    logo = PhotoImage(file="logos/people_py_square.png")
-    root.iconphoto(True, logo)
+#    if "logo" not in globals():
+#        if getattr(sys, 'frozen', False):
+#            logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
+#        else:
+#            logo = PhotoImage(file="logo.png")
+#    root.iconphoto(True, logo)
     # adding menu bar in root window
     # new item in menu bar labelled as 'New'
     # adding more items in the menu bar 
