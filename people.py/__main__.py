@@ -251,11 +251,11 @@ def main() -> Tk:
         global dbFile
         if "dbFile" not in globals(): # AKA hasn't selected yet
             conflictWindow = Tk()
-#            if getattr(sys, 'frozen', False):
-#                logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
-#            else:
-#                logo = PhotoImage(file="logo.png")
-#            conflictWindow.iconphoto(True, logo)
+            if getattr(sys, 'frozen', False):
+                logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
+            else:
+                logo = PhotoImage(file="logo.png")
+            conflictWindow.iconphoto(True, logo)
             conflictWindow.title("Multiple databases detected")
             conflictLBL = Label(conflictWindow, text=("""Looks like multiple databases have been detected! 
 Please choose the one you'd like to open:"""))
@@ -302,12 +302,11 @@ Please choose the one you'd like to open:"""))
     root.title("people.py")
     # Set geometry(widthxheight)
     root.configure(padx=5, pady=5)
-#    if "logo" not in globals():
-#        if getattr(sys, 'frozen', False):
-#            logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
-#        else:
-#            logo = PhotoImage(file="logo.png")
-#    root.iconphoto(True, logo)
+    if getattr(sys, 'frozen', False):
+        logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
+    else:
+        logo = PhotoImage(file="logo.png")
+    root.iconphoto(True, logo)
     # adding menu bar in root window
     # new item in menu bar labelled as 'New'
     # adding more items in the menu bar 
