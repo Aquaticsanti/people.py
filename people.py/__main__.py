@@ -94,7 +94,8 @@ def NewContact(index: int = -1):
             label.grid(row=i)
 
             entry = Entry(newContactWindow, width=25)
-            entry.insert(0, info)
+            if info is not None:
+                entry.insert(0, info)
             dynamic_entry.append(entry)
             entry.grid(row=i, column=1)
             i += 1
