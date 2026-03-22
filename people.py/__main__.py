@@ -35,7 +35,6 @@ def NewContact(index: int = -1):
             contactInfo = []
             for entry in dynamic_entry:
                 contactInfo.append(str(entry.get()))
-            print(index)
             update = ""
             for item, info in zip(items, contactInfo):
                 update += f'{item}="{info}", '
@@ -306,7 +305,6 @@ Please choose the one you'd like to open:"""))
         logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
     else:
         logo = PhotoImage(file="logo.png")
-    print(logo, type(logo))
     root.iconphoto(True, logo)
     # adding menu bar in root window
     # new item in menu bar labelled as 'New'
@@ -328,7 +326,6 @@ Please choose the one you'd like to open:"""))
         root.destroy()
         root = main()
         root.mainloop()
-        deleteContact2(root2)
     def editContact(contactIndex: int):
         NewContact(contactIndex)
     if empty == True:
