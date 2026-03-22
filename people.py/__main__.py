@@ -306,6 +306,7 @@ Please choose the one you'd like to open:"""))
         logo = PhotoImage(file=os.path.join(sys._MEIPASS, "files/logo.png"))
     else:
         logo = PhotoImage(file="logo.png")
+    print(logo, type(logo))
     root.iconphoto(True, logo)
     # adding menu bar in root window
     # new item in menu bar labelled as 'New'
@@ -321,15 +322,13 @@ Please choose the one you'd like to open:"""))
     def copyText(text: str, dummy):
         pyperclip.copy(text)
     def deleteContact(contactIndex: int):
+        global root
         cur.execute("DELETE FROM people WHERE id=?", (contactIndex,))
         db.commit()
-        root2 = main()
         root.destroy()
-        deleteContact2(root2)
-    def deleteContact2(root2: Tk):
-        global root
-        root = root2
+        root = main()
         root.mainloop()
+        deleteContact2(root2)
     def editContact(contactIndex: int):
         NewContact(contactIndex)
     if empty == True:
